@@ -21,6 +21,7 @@ ENV PATH /opt/conda/bin:$PATH
 
 RUN apt-get update && apt-get install -y libglu1
 
+RUN pip install --upgrade pip
 RUN pip install opencv-python
 
 RUN conda install pytorch-cpu==1.1.0 torchvision-cpu==0.3.0 cpuonly -c pytorch
