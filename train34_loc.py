@@ -76,21 +76,24 @@ class TrainData(Dataset):
         msk0 = cv2.imread(fn.replace('/images/', '/masks/'), cv2.IMREAD_UNCHANGED)
 
         if random.random() > 0.5:
+            # FLIP_TOP_BOTTOM
             img = img[::-1, ...]
             msk0 = msk0[::-1, ...]
 
         if random.random() > 0.05:
-            rot = random.randrange(4)
+            rot = random.randrange(4) #generate a number from [0,4) and rotate 90 deg rot times.
             if rot > 0:
                 img = np.rot90(img, k=rot)
                 msk0 = np.rot90(msk0, k=rot)
 
         if random.random() > 0.8:
+            #shift 320 pixel up or down, and 320 pixel left or right.
             shift_pnt = (random.randint(-320, 320), random.randint(-320, 320))
             img = shift_image(img, shift_pnt)
             msk0 = shift_image(msk0, shift_pnt)
             
         if random.random() > 0.2:
+            # rotate and scale image.
             rot_pnt =  (img.shape[0] // 2 + random.randint(-320, 320), img.shape[1] // 2 + random.randint(-320, 320))
             scale = 0.9 + random.random() * 0.2
             angle = random.randint(0, 20) - 10
