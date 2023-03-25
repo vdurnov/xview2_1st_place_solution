@@ -153,7 +153,7 @@ class TrainData(Dataset):
             el_det = self.elastic.to_deterministic()
             img = el_det.augment_image(img)
 
-        msk = d[..., np.newaxis]
+        msk = msk0[..., np.newaxis]
 
         msk = (msk > 127) * 1
 
