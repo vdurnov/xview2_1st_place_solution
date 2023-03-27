@@ -47,7 +47,7 @@ models_folder = 'weights'
 input_shape = (736, 736)
 
 
-all_files = []
+all_files = [] #contain _pre_disaster image names in train and tier3 folder.
 for d in train_dirs:
     for f in sorted(listdir(path.join(d, 'images'))):
         if '_pre_disaster.png' in f:
@@ -76,21 +76,24 @@ class TrainData(Dataset):
         msk0 = cv2.imread(fn.replace('/images/', '/masks/'), cv2.IMREAD_UNCHANGED)
 
         if random.random() > 0.5:
+            # FLIP_TOP_BOTTOM
             img = img[::-1, ...]
             msk0 = msk0[::-1, ...]
 
         if random.random() > 0.05:
-            rot = random.randrange(4)
+            rot = random.randrange(4) #generate a number from [0,4) and rotate 90 deg rot times.
             if rot > 0:
                 img = np.rot90(img, k=rot)
                 msk0 = np.rot90(msk0, k=rot)
 
         if random.random() > 0.8:
+            #shift 320 pixel up or down, and 320 pixel left or right.
             shift_pnt = (random.randint(-320, 320), random.randint(-320, 320))
             img = shift_image(img, shift_pnt)
             msk0 = shift_image(msk0, shift_pnt)
             
         if random.random() > 0.2:
+            # rotate and scale image.
             rot_pnt =  (img.shape[0] // 2 + random.randint(-320, 320), img.shape[1] // 2 + random.randint(-320, 320))
             scale = 0.9 + random.random() * 0.2
             angle = random.randint(0, 20) - 10
@@ -99,6 +102,8 @@ class TrainData(Dataset):
                 msk0 = rotate_image(msk0, angle, scale, rot_pnt)
 
         crop_size = input_shape[0]
+        # get crop values for n times, where n = random number in range(1, 5).
+        # retain the crop with maximum localization in mask.
         if random.random() > 0.3:
             crop_size = random.randint(int(input_shape[0] / 1.2), int(input_shape[0] / 0.8))
 
@@ -154,6 +159,8 @@ class TrainData(Dataset):
 
         img = preprocess_inputs(img)
 
+        #numpy.ndarray (H x W x C) in the range
+        #[0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0].
         img = torch.from_numpy(img.transpose((2, 0, 1))).float()
         msk = torch.from_numpy(msk.transpose((2, 0, 1))).long()
 
@@ -199,7 +206,7 @@ def validate(net, data_loader):
     with torch.no_grad():
         for i, sample in enumerate(tqdm(data_loader)):
             msks = sample["msk"].numpy()
-            imgs = sample["img"].cuda(non_blocking=True)
+            imgs = sample["img"].cuda(non_blocking=True) #what is this non_blocking calls?
             
             out = model(imgs)
 
@@ -281,7 +288,10 @@ if __name__ == '__main__':
     # os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     # os.environ["CUDA_VISIBLE_DEVICES"] = vis_dev
 
-    cudnn.benchmark = True
+    cudnn.benchmark = True #It enables benchmark mode in cudnn.
+    #benchmark mode is good whenever your input sizes for your network do not vary. 
+    #This way, cudnn will look for the optimal set of algorithms for that particular configuration (which takes some time). 
+    #This usually leads to faster runtime.
 
     batch_size = 16
     val_batch_size = 8
